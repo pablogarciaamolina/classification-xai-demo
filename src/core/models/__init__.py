@@ -1,0 +1,1 @@
+from src.core.models.alexnet import AlexNet
