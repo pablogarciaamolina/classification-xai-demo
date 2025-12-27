@@ -24,7 +24,6 @@ class GradientAscent:
         self.img_size = img_size
         self.device = next(model.parameters()).device
         
-        # Normalization parameters (should match training preprocessing)
         self.mean = torch.tensor([0.5, 0.5, 0.5]).view(1, 3, 1, 1).to(self.device)
         self.std = torch.tensor([0.5, 0.5, 0.5]).view(1, 3, 1, 1).to(self.device)
         
