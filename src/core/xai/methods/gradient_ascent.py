@@ -177,7 +177,7 @@ class GradientAscent:
             loss.backward()
             optimizer.step()
             
-           with torch.no_grad():
+            with torch.no_grad():
                 img.clamp_(0, 1)
             
             if blur_freq > 0 and (i + 1) % blur_freq == 0:
