@@ -33,7 +33,7 @@ class Grad_CAM:
         Backward hook to capture gradients.
         """
         
-        self.last_cnn_grad = grad_output[0].detach()
+        self.last_cnn_grad = grad_output[0].detach().clone()
 
     def explain(self, inputs: torch.Tensor, class_idx: Optional[int] = None) -> torch.Tensor:
         """
@@ -66,7 +66,7 @@ class Grad_CAM:
 
         result = torch.nn.functional.relu(torch.sum(weights * self.cnn_outputs, dim=1))
 
-        g = result.detach().cpu()
+        g = result.detach().clone().cpu()
         g = torch.nn.functional.interpolate(
             g.unsqueeze(1),
             size=inputs.shape[2:],
@@ -75,6 +75,6 @@ class Grad_CAM:
         ).squeeze()
     
         g = g - g.min()
-        g /= (g.max() + 1e-8)
+        g = g / (g.max() + 1e-8)
 
         return g

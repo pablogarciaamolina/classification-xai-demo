@@ -6,7 +6,7 @@ import seaborn as sns
 import sklearn.metrics as metrics
 import torch
 
-from src.core.analysis._config import ANALYSIS_DIR, GRAPH_DIR
+from src.core.analysis._config import ANALYSIS_DIR, GRAPHS_DIR
 
 def confusion_matrix(
     y_pred: torch.Tensor,

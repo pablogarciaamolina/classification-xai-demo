@@ -1,3 +1,3 @@
-from .cam import GradCAM
-from .gradient_ascent import GradientAscent
-from .integrated_gradients import IGExplainer
+from .cam import Grad_CAM
+from .gradient_ascent import Gradient_Ascent
+from .integrated_gradients import Integrated_Gradients

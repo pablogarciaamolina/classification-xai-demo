@@ -45,8 +45,8 @@ class Integrated_Gradients:
             baselines=baseline
         )
         
-        g = attributions.sum(dim=1).squeeze().cpu().detach()
+        g = attributions.sum(dim=1).squeeze().cpu().detach().clone()
         g = g - g.min()
-        g /= (g.max() + 1e-8)
+        g = g / (g.max() + 1e-8)
         
         return g

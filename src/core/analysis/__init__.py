@@ -1,1 +1,1 @@
-from src.core.analysis.graphs import confusion_matrix
+from src.core.analysis.metrics.graphs import confusion_matrix
