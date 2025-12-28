@@ -1,19 +1,17 @@
+import os
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 from typing import Tuple, List, Dict, Union, Optional, Literal
 
+from src.core.analysis._config import ANALYSIS_DIR, XAI_DIR
 
-class ROADEvaluation:
+
+class ROAD:
     """
-    ROAD (Remove And Debias) - Evaluation metric for saliency maps.
-    
     Measures the quality of explanations by removing pixels in order of importance
     and measuring the impact on model predictions.
-    
-    Reference: Rong et al. "A Consistent and Efficient Evaluation Strategy for 
-    Attribution Methods" (ICML 2022)
     """
     
     def __init__(
@@ -28,6 +26,7 @@ class ROADEvaluation:
             model: PyTorch model to evaluate
             device: Device to run computations on ('cuda' or 'cpu')
         """
+
         self.model = model
         self.model.eval()
         self.device = device
@@ -42,12 +41,13 @@ class ROADEvaluation:
         Get baseline replacement value for removed pixels.
         
         Args:
-            image: Input image tensor of shape (1, C, H, W)
+            image: Input image tensor of shape [1, C, H, W]
             method: Baseline method - 'blur', 'mean', 'zero', or 'noise'
         
         Returns:
-            Baseline tensor with same shape as image (1, C, H, W)
+            Baseline tensor with same shape as image [1, C, H, W]
         """
+
         if method == 'blur':
             sigma = 5.0
             
@@ -73,39 +73,33 @@ class ROADEvaluation:
     
     def _normalize_saliency_map(
         self, 
-        saliency_map: Union[np.ndarray, torch.Tensor]
+        saliency_map: np.ndarray or torch.Tensor
     ) -> torch.Tensor:
         """
-        Normalize saliency map to torch.Tensor with shape (1, 1, H, W).
+        Normalize saliency map to torch.Tensor with shape [1, 1, H, W].
         
         Args:
             saliency_map: Saliency map as numpy array or torch tensor
-                         Can be shape (H, W), (1, H, W), (C, H, W), or (1, C, H, W)
+                         Can be shape [H, W], [1, H, W], [C, H, W], or [1, C, H, W]
         
         Returns:
-            Normalized saliency map tensor of shape (1, 1, H, W)
+            Normalized saliency map tensor of shape [1, 1, H, W]
         """
-        # Convert to tensor if numpy array
+
         if isinstance(saliency_map, np.ndarray):
             saliency_map = torch.from_numpy(saliency_map).float()
         
-        # Ensure it's a tensor
         if not isinstance(saliency_map, torch.Tensor):
             raise TypeError(f"Expected np.ndarray or torch.Tensor, got {type(saliency_map)}")
         
-        # Normalize shape to (1, 1, H, W)
         if len(saliency_map.shape) == 2:
-            # (H, W) -> (1, 1, H, W)
             saliency_map = saliency_map.unsqueeze(0).unsqueeze(0)
         elif len(saliency_map.shape) == 3:
-            # (1, H, W) or (C, H, W) -> (1, 1, H, W)
-            # Assume first dimension is batch or channel, take mean if multiple channels
             if saliency_map.shape[0] > 1:
                 saliency_map = saliency_map.mean(dim=0, keepdim=True).unsqueeze(0)
             else:
                 saliency_map = saliency_map.unsqueeze(0)
         elif len(saliency_map.shape) == 4:
-            # (1, C, H, W) -> (1, 1, H, W)
             if saliency_map.shape[1] > 1:
                 saliency_map = saliency_map.mean(dim=1, keepdim=True)
         else:
@@ -134,129 +128,18 @@ class ROADEvaluation:
                 - Modified image with top pixels replaced by baseline (1, C, H, W)
                 - Binary mask indicating which pixels were kept (1, 1, H, W)
         """
-        # Normalize saliency map
+
         saliency_map = self._normalize_saliency_map(saliency_map)
         
-        # Flatten for quantile computation
         sal_flat = saliency_map.view(-1)
         
-        # Compute threshold
         threshold = torch.quantile(sal_flat, 1.0 - percentile / 100.0)
         
-        # Create mask (1 = keep, 0 = remove)
         mask = (saliency_map <= threshold).float()
         
-        # Apply mask
         modified_image = image * mask + baseline * (1 - mask)
         
         return modified_image, mask
-    
-    def compute_deletion_curve(
-        self, 
-        image: torch.Tensor, 
-        saliency_map: Union[np.ndarray, torch.Tensor], 
-        target_class: int,
-        percentiles: Optional[List[int]] = None,
-        baseline_method: Literal['blur', 'mean', 'zero', 'noise'] = 'blur'
-    ) -> Tuple[List[int], List[float]]:
-        """
-        Compute deletion curve: model confidence as pixels are removed.
-        
-        Args:
-            image: Input image tensor of shape (1, C, H, W)
-            saliency_map: Saliency map as numpy array or torch tensor
-                         Can be shape (H, W), (1, H, W), (C, H, W), or (1, C, H, W)
-            target_class: Target class index (int)
-            percentiles: List of percentiles to evaluate (default: 0 to 100 in steps of 5)
-            baseline_method: Method for baseline replacement
-        
-        Returns:
-            Tuple of:
-                - percentiles: List of percentile values
-                - scores: List of model confidence scores at each percentile
-        """
-        if percentiles is None:
-            percentiles = list(range(0, 101, 5))
-        
-        # Normalize saliency map
-        saliency_map = self._normalize_saliency_map(saliency_map)
-        saliency_map = saliency_map.to(image.device)
-        
-        # Get baseline
-        baseline = self._get_baseline(image, method=baseline_method)
-        
-        scores = []
-        
-        for p in percentiles:
-            # Remove top p% of pixels
-            modified_image, _ = self._remove_pixels(image, saliency_map, p, baseline)
-            
-            # Get model prediction
-            with torch.no_grad():
-                output = self.model(modified_image.to(self.device))
-                prob = torch.softmax(output, dim=1)
-                score = prob[0, target_class].item()
-            
-            scores.append(score)
-        
-        return percentiles, scores
-    
-    def compute_insertion_curve(
-        self, 
-        image: torch.Tensor, 
-        saliency_map: Union[np.ndarray, torch.Tensor], 
-        target_class: int,
-        percentiles: Optional[List[int]] = None,
-        baseline_method: Literal['blur', 'mean', 'zero', 'noise'] = 'blur'
-    ) -> Tuple[List[int], List[float]]:
-        """
-        Compute insertion curve: model confidence as pixels are added back.
-        
-        Args:
-            image: Input image tensor of shape (1, C, H, W)
-            saliency_map: Saliency map as numpy array or torch tensor
-                         Can be shape (H, W), (1, H, W), (C, H, W), or (1, C, H, W)
-            target_class: Target class index (int)
-            percentiles: List of percentiles to evaluate (default: 0 to 100 in steps of 5)
-            baseline_method: Method for baseline replacement
-        
-        Returns:
-            Tuple of:
-                - percentiles: List of percentile values
-                - scores: List of model confidence scores at each percentile
-        """
-        if percentiles is None:
-            percentiles = list(range(0, 101, 5))
-        
-        # Normalize saliency map
-        saliency_map = self._normalize_saliency_map(saliency_map)
-        saliency_map = saliency_map.to(image.device)
-        
-        # Get baseline
-        baseline = self._get_baseline(image, method=baseline_method)
-        
-        scores = []
-        
-        for p in percentiles:
-            # Compute threshold for insertion
-            sal_flat = saliency_map.view(-1)
-            threshold = torch.quantile(sal_flat, 1.0 - p / 100.0)
-            
-            # Create mask (1 = insert, 0 = baseline)
-            mask = (saliency_map >= threshold).float()
-            
-            # Apply mask (opposite of deletion)
-            modified_image = image * mask + baseline * (1 - mask)
-            
-            # Get model prediction
-            with torch.no_grad():
-                output = self.model(modified_image.to(self.device))
-                prob = torch.softmax(output, dim=1)
-                score = prob[0, target_class].item()
-            
-            scores.append(score)
-        
-        return percentiles, scores
     
     def _compute_auc(
         self, 
@@ -273,38 +156,146 @@ class ROADEvaluation:
         Returns:
             AUC value normalized to [0, 1]
         """
-        return np.trapz(scores, percentiles) / 100.0
+
+        percentiles_tensor = torch.tensor(percentiles, dtype=torch.float32)
+        scores_tensor = torch.tensor(scores, dtype=torch.float32)
+        
+        auc = torch.trapezoid(scores_tensor, percentiles_tensor).item() / 100.0
+        return auc
+    
+    def compute_deletion_curve(
+        self, 
+        image: torch.Tensor, 
+        saliency_map: np.ndarray or torch.Tensor, 
+        target_class: int,
+        percentiles: Optional[List[int]] = None,
+        baseline_method: Literal['blur', 'mean', 'zero', 'noise'] = 'blur'
+    ) -> Tuple[List[int], List[float]]:
+        """
+        Compute deletion curve: model confidence as pixels are removed.
+        
+        Args:
+            image: Input image tensor of shape [1, C, H, W]
+            saliency_map: Saliency map as numpy array or torch tensor
+                         Can be shape [H, W], [1, H, W], [C, H, W], or [1, C, H, W]
+            target_class: Target class index (int)
+            percentiles: List of percentiles to evaluate (default: 0 to 100 in steps of 5)
+            baseline_method: Method for baseline replacement
+        
+        Returns:
+            Tuple of:
+                - percentiles: List of percentile values
+                - scores: List of model confidence scores at each percentile
+        """
+
+        if percentiles is None:
+            percentiles = list(range(0, 101, 5))
+        
+        saliency_map = self._normalize_saliency_map(saliency_map)
+        saliency_map = saliency_map.to(image.device)
+        
+        baseline = self._get_baseline(image, method=baseline_method)
+        
+        scores = []
+        
+        for p in percentiles:
+            modified_image, _ = self._remove_pixels(image, saliency_map, p, baseline)
+            
+            with torch.no_grad():
+                output = self.model(modified_image.to(self.device))
+                prob = torch.softmax(output, dim=1)
+                score = prob[0, target_class].item()
+            
+            scores.append(score)
+        
+        return percentiles, scores
+    
+    def compute_insertion_curve(
+        self, 
+        image: torch.Tensor, 
+        saliency_map: np.ndarray or torch.Tensor, 
+        target_class: int,
+        percentiles: Optional[List[int]] = None,
+        baseline_method: Literal['blur', 'mean', 'zero', 'noise'] = 'blur'
+    ) -> Tuple[List[int], List[float]]:
+        """
+        Compute insertion curve: model confidence as pixels are added back.
+        
+        Args:
+            image: Input image tensor of shape [1, C, H, W]
+            saliency_map: Saliency map as numpy array or torch tensor
+                         Can be shape [H, W], [1, H, W], [C, H, W], or [1, C, H, W]
+            target_class: Target class index (int)
+            percentiles: List of percentiles to evaluate (default: 0 to 100 in steps of 5)
+            baseline_method: Method for baseline replacement
+        
+        Returns:
+            Tuple of:
+                - percentiles: List of percentile values
+                - scores: List of model confidence scores at each percentile
+        """
+        
+        if percentiles is None:
+            percentiles = list(range(0, 101, 5))
+        
+        saliency_map = self._normalize_saliency_map(saliency_map)
+        saliency_map = saliency_map.to(image.device)
+        
+        baseline = self._get_baseline(image, method=baseline_method)
+        
+        scores = []
+        
+        for p in percentiles:
+            sal_flat = saliency_map.view(-1)
+            threshold = torch.quantile(sal_flat, 1.0 - p / 100.0)
+            
+            mask = (saliency_map >= threshold).float()
+            
+            modified_image = image * mask + baseline * (1 - mask)
+            
+            with torch.no_grad():
+                output = self.model(modified_image.to(self.device))
+                prob = torch.softmax(output, dim=1)
+                score = prob[0, target_class].item()
+            
+            scores.append(score)
+        
+        return percentiles, scores
     
     def evaluate(
         self, 
         image: torch.Tensor, 
-        saliency_map: Union[np.ndarray, torch.Tensor], 
+        saliency_map: np.ndarray or torch.Tensor, 
         target_class: int,
         percentiles: Optional[List[int]] = None,
         baseline_method: Literal['blur', 'mean', 'zero', 'noise'] = 'blur',
-        metrics: List[Literal['deletion', 'insertion']] = ['deletion', 'insertion']
-    ) -> Dict[str, Dict[str, Union[List[int], List[float], float]]]:
+        metrics: List[Literal['deletion', 'insertion']] = ['deletion', 'insertion'],
+        verbose: bool = True
+    ) -> Dict[str, Dict]:
         """
         Complete ROAD evaluation of a saliency map.
         
         Args:
-            image: Input image tensor of shape (1, C, H, W)
+            image: Input image tensor of shape [1, C, H, W]
             saliency_map: Saliency map as numpy array or torch tensor
-                         Can be shape (H, W), (1, H, W), (C, H, W), or (1, C, H, W)
+                         Can be shape [H, W], [1, H, W], [C, H, W], or [1, C, H, W]
             target_class: Target class index (int)
             percentiles: List of percentiles to evaluate (default: 0 to 100 in steps of 5)
             baseline_method: Method for baseline replacement
             metrics: List of metrics to compute ('deletion', 'insertion')
+            verbose: Whether to print progress messages
         
         Returns:
             Dictionary with evaluation results containing:
                 - 'deletion': {'percentiles': List[int], 'scores': List[float], 'auc': float}
                 - 'insertion': {'percentiles': List[int], 'scores': List[float], 'auc': float}
         """
+
         results = {}
         
         if 'deletion' in metrics:
-            print("Computing deletion curve...")
+            if verbose:
+                print("Computing deletion curve...")
             del_percentiles, del_scores = self.compute_deletion_curve(
                 image, saliency_map, target_class, percentiles, baseline_method
             )
@@ -315,10 +306,12 @@ class ROADEvaluation:
                 'scores': del_scores,
                 'auc': del_auc
             }
-            print(f"Deletion AUC: {del_auc:.4f}")
+            if verbose:
+                print(f"Deletion AUC: {del_auc:.4f}")
         
         if 'insertion' in metrics:
-            print("Computing insertion curve...")
+            if verbose:
+                print("Computing insertion curve...")
             ins_percentiles, ins_scores = self.compute_insertion_curve(
                 image, saliency_map, target_class, percentiles, baseline_method
             )
@@ -329,15 +322,17 @@ class ROADEvaluation:
                 'scores': ins_scores,
                 'auc': ins_auc
             }
-            print(f"Insertion AUC: {ins_auc:.4f}")
+            if verbose:
+                print(f"Insertion AUC: {ins_auc:.4f}")
         
         return results
     
     def plot_curves(
         self, 
-        results: Dict[str, Dict[str, Union[List[int], List[float], float]]], 
+        results: Dict[str, Dict], 
         title: str = "ROAD Evaluation", 
-        save_path: Optional[str] = None
+        save_path: Optional[str] = None,
+        show: bool = False
     ) -> None:
         """
         Plot deletion and insertion curves.
@@ -346,10 +341,9 @@ class ROADEvaluation:
             results: Results dictionary from evaluate()
             title: Plot title
             save_path: Path to save the plot (optional)
-        
-        Returns:
-            None (displays plot)
+            show: Whether to display the plot
         """
+
         fig, axes = plt.subplots(1, 2, figsize=(12, 4))
         
         if 'deletion' in results:
@@ -378,16 +372,22 @@ class ROADEvaluation:
         plt.tight_layout()
         
         if save_path:
-            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+            os.makedirs(os.path.join(ANALYSIS_DIR, XAI_DIR), exist_ok=True)
+            plt.savefig(os.path.join(ANALYSIS_DIR, XAI_DIR, save_path), dpi=150, bbox_inches='tight')
         
-        plt.show()
+        if show:
+            plt.show()
+        else:
+            plt.close()
     
     def visualize_removal_steps(
         self, 
         image: torch.Tensor, 
         saliency_map: Union[np.ndarray, torch.Tensor], 
         percentiles: List[int] = [10, 30, 50, 70, 90],
-        baseline_method: Literal['blur', 'mean', 'zero', 'noise'] = 'blur'
+        baseline_method: Literal['blur', 'mean', 'zero', 'noise'] = 'blur',
+        save_path: Optional[str] = None,
+        show: bool = False
     ) -> None:
         """
         Visualize the image at different removal percentiles.
@@ -397,11 +397,10 @@ class ROADEvaluation:
             saliency_map: Saliency map as numpy array or torch tensor
             percentiles: List of percentiles to visualize
             baseline_method: Baseline replacement method
-        
-        Returns:
-            None (displays plot)
+            save_path: Path to save the visualization
+            show: Whether to display the plot
         """
-        # Normalize saliency map
+        
         saliency_map = self._normalize_saliency_map(saliency_map)
         saliency_map = saliency_map.to(image.device)
         
@@ -426,4 +425,12 @@ class ROADEvaluation:
             axes[idx + 1].axis('off')
         
         plt.tight_layout()
-        plt.show()
+        
+        if save_path:
+            os.makedirs(os.path.join(ANALYSIS_DIR, XAI_DIR), exist_ok=True)
+            plt.savefig(os.path.join(ANALYSIS_DIR, XAI_DIR, save_path), dpi=150, bbox_inches='tight')
+        
+        if show:
+            plt.show()
+        else:
+            plt.close()
