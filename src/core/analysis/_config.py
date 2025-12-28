@@ -1,2 +1,3 @@
 ANALYSIS_DIR = "results"
-GRAPH_DIR = "graphs"
+GRAPHS_DIR = "graphs"
+XAI_DIR = "xai"
