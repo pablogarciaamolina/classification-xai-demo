@@ -81,7 +81,6 @@ if st.session_state.selected_index is not None:
         if st.button("🚀 Generate Explanations", type="primary"):
             with st.spinner("Generating explanations... This may take a minute."):
                 try:
-                    # First, get prediction
                     pred_payload = {
                         "tensor": images_batch[idx].tolist(),
                         "true_label_idx": true_label_idx
@@ -92,7 +91,6 @@ if st.session_state.selected_index is not None:
                         predicted_class_idx = pred_response.json()["predicted_class"]
                         predicted_label = dataset.classes[predicted_class_idx]
                         
-                        # Generate explanation for true class
                         xai_payload = {
                             "tensor": images_batch[idx].tolist(),
                             "target_class": true_label_idx
@@ -106,7 +104,6 @@ if st.session_state.selected_index is not None:
                                 "true_class_results": xai_response.json()
                             }
                             
-                            # If prediction differs, get explanation for predicted class too
                             if predicted_class_idx != true_label_idx:
                                 xai_payload_pred = {
                                     "tensor": images_batch[idx].tolist(),
@@ -127,7 +124,6 @@ if st.session_state.selected_index is not None:
                 except Exception as e:
                     st.error(f"Request failed: {e}")
     
-    # Display results if available
     if st.session_state.local_xai_results is not None:
         results = st.session_state.local_xai_results
         predicted_label = results["predicted_label"]
@@ -135,7 +131,6 @@ if st.session_state.selected_index is not None:
         st.markdown("---")
         st.subheader("Explanation Results")
         
-        # Show prediction result
         if predicted_label == true_label:
             st.success(f"**Prediction:** {predicted_label} ✅ (Correct)")
         else:
@@ -143,7 +138,6 @@ if st.session_state.selected_index is not None:
         
         st.markdown("### Saliency Maps")
         
-        # Display explanations for true class
         st.markdown(f"#### Explanations for True Class: **{true_label}**")
         col1, col2 = st.columns(2)
         
@@ -169,7 +163,6 @@ if st.session_state.selected_index is not None:
                 deletion_curve=true_results.get("ig_deletion_curve")
             )
         
-        # Display explanations for predicted class if different
         if "pred_class_results" in results:
             st.markdown(f"#### Explanations for Predicted Class: **{predicted_label}**")
             col3, col4 = st.columns(2)

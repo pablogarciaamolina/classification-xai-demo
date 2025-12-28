@@ -30,12 +30,10 @@ def render_saliency_visualization(
     """
     st.markdown(f"### {method_name} - {class_name}")
     
-    # Decode and display image
     img_data = base64.b64decode(saliency_map_base64)
     img = Image.open(BytesIO(img_data))
     st.image(img, width="stretch")
     
-    # Display metrics in columns
     col1, col2 = st.columns(2)
     with col1:
         st.metric(
@@ -50,7 +48,6 @@ def render_saliency_visualization(
             help="Lower is better. Measures stability of explanations under small input perturbations."
         )
         
-    # Plot deletion curve if available
     if deletion_curve:
         st.markdown("**Deletion Curve (ROAD)**")
         try:
@@ -69,7 +66,6 @@ def render_saliency_visualization(
             ax.set_ylim(-0.05, 1.05)
             ax.grid(True, linestyle='--', alpha=0.5)
             
-            # Remove top and right spines
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
             
@@ -93,7 +89,6 @@ def render_global_visualization(
     st.markdown(f"### Global Explanation for: **{class_name}**")
     st.markdown("This image was generated to maximize the activation of the target class.")
     
-    # Decode and display image
     img_data = base64.b64decode(visualization_base64)
     img = Image.open(BytesIO(img_data))
     st.image(img, width="stretch")
