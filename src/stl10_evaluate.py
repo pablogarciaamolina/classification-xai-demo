@@ -3,22 +3,22 @@ import argparse
 import mlflow
 from torch.utils.data.dataset import Subset
 
-from src.core.data import load_big_cats
+from src.core.data import load_stl10
 from src.core.pipelines import Classifier_Pipeline, Pipeline_Config, load_model
 from src.core.analysis import confusion_matrix
-from src.config import BATCH_SIZE, BIG_CATS_PIPELINE_CONFIG
+from src.config import BATCH_SIZE, STL10_PIPELINE_CONFIG
 
 
 def evaluate(model_name: str) -> None:
 
     print("Loading data...", end="")
-    _, _, test_data = load_big_cats(batch_size=BATCH_SIZE, for_training=False)
+    _, _, test_data = load_stl10(batch_size=BATCH_SIZE, for_training=False)
     print("DONE")
 
     model, actual_model_name = load_model(model_name)
     print("Using model:", actual_model_name)
 
-    config = Pipeline_Config(**BIG_CATS_PIPELINE_CONFIG)
+    config = Pipeline_Config(**STL10_PIPELINE_CONFIG)
     print("Using device:", config.device)
     pipeline = Classifier_Pipeline(model, config=config, name=actual_model_name)
     

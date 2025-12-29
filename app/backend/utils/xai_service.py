@@ -8,7 +8,7 @@ import torch
 from PIL import Image
 import numpy as np
 
-from src.core.data._config import BIG_CATS_IMAGE_SIZE
+from src.core.data._config import STL10_IMAGE_SIZE
 from src.core.analysis.xai.methods.cam import Grad_CAM
 from src.core.analysis.xai.methods.integrated_gradients import Integrated_Gradients
 from src.core.analysis.xai.methods.gradient_ascent import Gradient_Ascent
@@ -133,7 +133,7 @@ class XAI_Service:
         grad_ascent = Gradient_Ascent(
             self.model,
             target_class,
-            BIG_CATS_IMAGE_SIZE
+            STL10_IMAGE_SIZE
         )
         
         generated_img = grad_ascent.generate(

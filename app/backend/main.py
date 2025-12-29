@@ -2,15 +2,17 @@
 Backend main
 """
 
+import matplotlib
+matplotlib.use('Agg')
 from flask import Flask
 from .api.predict import predict_bp
 from .api.metrics import metrics_bp
 from .api.xai import xai_bp
 from .config import MODEL_NAME, BACKEND_PORT
 
-from src.config import BIG_CATS_PIPELINE_CONFIG
+from src.config import STL10_PIPELINE_CONFIG
 from src.core.pipelines import load_model, Classifier_Pipeline, Pipeline_Config
-from src.core.models.alexnet import AlexNet
+from src.core.models import ResNet34
 from .utils.xai_service import XAI_Service
 
 def raise_backend() -> Flask:
@@ -24,17 +26,17 @@ def raise_backend() -> Flask:
     print(f"✅ Model ({model_name}) loaded")
 
     print("🔄 Setting up pipeline...")
-    pipeline = Classifier_Pipeline(model, config=Pipeline_Config(**BIG_CATS_PIPELINE_CONFIG))
+    pipeline = Classifier_Pipeline(model, config=Pipeline_Config(**STL10_PIPELINE_CONFIG))
     app.config["pipeline"] = pipeline
     print("✅ Pipeline set up successfully")
 
     print("🔄 Loading separate model for XAI service...")
-    model_xai = AlexNet(input_channels=3, num_classes=10)
+    model_xai = ResNet34(in_channels=3, num_classes=10, small_inputs=True)
     model_xai.load_state_dict(model.state_dict())
     print("✅ Separate model loaded for XAI")
 
     print("🔄 Initializing XAI service...")
-    xai_service = XAI_Service(model_xai, device=str(BIG_CATS_PIPELINE_CONFIG["device"]))
+    xai_service = XAI_Service(model_xai)
     app.config["xai_service"] = xai_service
     print("✅ XAI service initialized")
 

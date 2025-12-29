@@ -5,8 +5,8 @@ Main entry point for the multi-page Streamlit app
 import streamlit as st
 
 st.set_page_config(
-    page_title="Big Cats XAI Demo",
-    page_icon="🐆",
+    page_title="STL10 XAI Demo",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )

@@ -1,20 +1,20 @@
 import streamlit as st
 import torch
 import numpy as np
-from src.core.data import load_dataset_big_cats
+from src.core.data import load_dataset_stl10
 
 @st.cache_resource
-def get_big_cats_dataset() -> torch.utils.data.Dataset:
+def get_stl10_dataset() -> torch.utils.data.Dataset:
     """
-    Method for caching the Big Cats dataset
+    Method for caching the STL10 dataset
     """
-    return load_dataset_big_cats("test")
+    return load_dataset_stl10("test")
 
 
 @st.cache_resource
-def get_big_cats_dataloader(_dataset: torch.utils.data.Dataset, batch_size: int = 10) -> torch.utils.data.DataLoader:
+def get_stl10_dataloader(_dataset: torch.utils.data.Dataset, batch_size: int = 10) -> torch.utils.data.DataLoader:
     """
-    Method for caching the Big Cats dataset
+    Method for caching the STL10 dataset
     """
     return torch.utils.data.DataLoader(
         _dataset, batch_size=batch_size, shuffle=True

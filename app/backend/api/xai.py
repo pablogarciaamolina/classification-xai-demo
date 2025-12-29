@@ -5,12 +5,12 @@ XAI API endpoints for local and global explanations
 from flask import Blueprint, request, jsonify, current_app
 import torch
 
-from src.core.data.big_cats import Big_Cats_Dataset
+from src.core.data.stl10 import STL10_Dataset
 from app.backend.utils.xai_service import XAI_Service
 
 xai_bp = Blueprint("xai_bp", __name__)
 
-CLASS_MAPPING = Big_Cats_Dataset.classes
+CLASS_MAPPING = STL10_Dataset.classes
 
 
 @xai_bp.route("/xai/local", methods=["POST"])

@@ -6,16 +6,16 @@ import streamlit as st
 import requests
 
 from app.frontend.config import GLOBAL_XAI_ENDPOINT
-from components.utils import get_big_cats_dataset
+from components.utils import get_stl10_dataset
 from components.saliency_viz import render_global_visualization
 
 
 st.title("🌍 Global XAI - Class Visualizations")
 st.markdown("Generate visualizations that show what the model has learned for each class using Gradient Ascent.")
 
-dataset = get_big_cats_dataset()
+dataset = get_stl10_dataset()
 class_names = dataset.classes
-
+    
 if "global_xai_result" not in st.session_state:
     st.session_state.global_xai_result = None
 
