@@ -10,7 +10,7 @@ num_classes = 10
 batch_size = 64
 
 lr = 1e-4
-epochs = 50
+epochs = 100
 
 # =======================
 # DEVELOPER CONFIGURATION

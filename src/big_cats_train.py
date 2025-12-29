@@ -1,7 +1,7 @@
 import torch
 
 from src.core.data import load_big_cats
-from src.core.models import AlexNet
+from src.core.models import AlexNet, ResNet34
 from src.core.pipelines import Classifier_Pipeline, Pipeline_Config, save_model
 from src.config import NUM_CLASSES, BATCH_SIZE, BIG_CATS_PIPELINE_CONFIG
 
@@ -15,11 +15,13 @@ def train() -> None:
     print("DONE")
 
     inputs: torch.Tensor = next(iter(train_data))[0]
-    model = AlexNet(inputs.shape[1], NUM_CLASSES)
+    # model = AlexNet(inputs.shape[1], NUM_CLASSES)
+    model = ResNet34(in_channels=inputs.shape[1], num_classes=NUM_CLASSES, small_inputs=False)
 
     config = Pipeline_Config(**BIG_CATS_PIPELINE_CONFIG)
     print("Using device:", config.device)
     pipeline = Classifier_Pipeline(model, config=config)
+    pipeline.name = "Big_Cats_" + pipeline.name
     
     mlflow.set_experiment(pipeline.name)
     with mlflow.start_run():
