@@ -3,6 +3,7 @@ from ._utils import RandomPatch
 
 DATA_DIR = "data"
 
+# BIG CATS
 BIG_CATS_DIR = "10 Big Cats"
 BIG_CATS_IMAGE_SIZE = (200, 200)
 BIG_CATS_TRANSFORMS = transforms.Compose([
@@ -21,6 +22,7 @@ BIG_CATS_TRAINING_TRANSFORMS = transforms.Compose([
     transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
 
+# GARBAGE
 GARBAGE_DIR = "Garbage Dataset"
 GARBAGE_IMAGE_SIZE = (200, 200)
 GARBAGE_TRANSFORMS = transforms.Compose([
@@ -38,6 +40,22 @@ GARBAGE_TRAINING_TRANSFORMS = transforms.Compose([
     transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
 
+# PEDIATRIC PNEUMONIA
+PEDIATRIC_PNEUMONIA_DIR = "Pediatric Chest X-ray Pneumonia"
+PEDIATRIC_PNEUMONIA_SIZE = (227, 227)
+PEDIATRIC_PNEUMONIA_TRANSFORMS = transforms.Compose([
+    transforms.Resize(PEDIATRIC_PNEUMONIA_SIZE),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5])
+])
+PEDIATRIC_PNEUMONIA_TRAINING_TRANSFORMS = transforms.Compose([
+    transforms.CenterCrop(PEDIATRIC_PNEUMONIA_SIZE),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5]),
+])
+
+# STL10
 STL10_DIR = "stl10"
 STL10_IMAGE_SIZE = (96, 96)
 STL10_TRANSFORMS = transforms.Compose([
