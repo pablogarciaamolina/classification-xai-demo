@@ -6,7 +6,7 @@ import streamlit as st
 import requests
 
 from app.frontend.config import IMAGES_PER_PAGE, MAX_GALLERY_COLUMNS, PREDICTION_BACKEND_ENDPOINT, LOCAL_XAI_ENDPOINT
-from components.utils import get_big_cats_dataset, get_big_cats_dataloader, load_new_batch, tensor_to_display
+from components.utils import get_stl10_dataset, get_stl10_dataloader, load_new_batch, tensor_to_display
 from components.gallery import render_gallery
 from components.saliency_viz import render_saliency_visualization
 
@@ -15,8 +15,8 @@ st.title("🔍 Local XAI - Saliency Maps")
 st.markdown("Select an image to generate local explanations using GradCAM and Integrated Gradients.")
 
 # Load data
-dataset = get_big_cats_dataset()
-dataloader = get_big_cats_dataloader(dataset, batch_size=IMAGES_PER_PAGE)
+dataset = get_stl10_dataset()
+dataloader = get_stl10_dataloader(dataset, batch_size=IMAGES_PER_PAGE)
 
 # Set state
 for key in ["batch", "labels", "selected_index", "local_xai_results"]:

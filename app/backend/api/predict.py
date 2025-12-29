@@ -3,14 +3,14 @@ from prometheus_client import Counter
 import torch
 
 from src.core.pipelines import Classifier_Pipeline
-from src.core.data.big_cats import Big_Cats_Dataset
+from src.core.data.stl10 import STL10_Dataset
 
 PREDICTION_COUNTER = Counter(
-    'big_cats_prediction_count',
-    'Prediction counter for big cats classification',
+    'stl10_prediction_count',
+    'Prediction counter for stl10 classification',
     ['prediction', 'correct']
 )
-CLASS_MAPPING = Big_Cats_Dataset.classes
+CLASS_MAPPING = STL10_Dataset.classes
 
 predict_bp = Blueprint("predict_bp", __name__)
 

@@ -2,6 +2,8 @@ import io
 import base64
 import torch
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 def create_overlay(image: torch.Tensor, saliency_map: torch.Tensor, alpha: float = 0.5) -> str:
