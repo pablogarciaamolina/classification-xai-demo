@@ -1,7 +1,7 @@
 from torchvision import transforms
 from ._utils import RandomPatch
 
-DATA_DIR: str = "data"
+DATA_DIR = "data"
 
 BIG_CATS_DIR = "10 Big Cats"
 BIG_CATS_IMAGE_SIZE = (200, 200)
@@ -16,6 +16,39 @@ BIG_CATS_TRAINING_TRANSFORMS = transforms.Compose([
     transforms.RandomHorizontalFlip(),
     # transforms.ColorJitter(),
     transforms.RandomInvert(0.3),
+    transforms.RandomRotation(10),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+])
+
+GARBAGE_DIR = "Garbage Dataset"
+GARBAGE_IMAGE_SIZE = (200, 200)
+GARBAGE_TRANSFORMS = transforms.Compose([
+    transforms.Resize(GARBAGE_IMAGE_SIZE),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+])
+GARBAGE_TRAINING_TRANSFORMS = transforms.Compose([
+    transforms.Resize(GARBAGE_IMAGE_SIZE),
+    transforms.RandomHorizontalFlip(),
+    transforms.ColorJitter(),
+    transforms.RandomInvert(0.3),
+    transforms.RandomRotation(10),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+])
+
+STL10_DIR = "stl10"
+STL10_IMAGE_SIZE = (96, 96)
+STL10_TRANSFORMS = transforms.Compose([
+    transforms.Resize(STL10_IMAGE_SIZE),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+])
+STL10_TRAINING_TRANSFORMS = transforms.Compose([
+    transforms.RandomCrop(STL10_IMAGE_SIZE, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
     transforms.RandomRotation(10),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
