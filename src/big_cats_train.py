@@ -1,7 +1,3 @@
-"""
-Main file for training a model for the classification of the Pediatric Chest X-ray Pneumonia dataset.
-"""
-
 import torch
 
 from src.core.data import load_big_cats

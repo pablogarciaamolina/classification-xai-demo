@@ -1,6 +1,3 @@
-"""
-Main file for loading and evaluating a model for classification of the Pediatric Chest X-ray Pneumonia dataset.
-"""
 import argparse
 
 import mlflow
