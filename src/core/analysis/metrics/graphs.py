@@ -47,7 +47,7 @@ def confusion_matrix(
     if not save_name.endswith(".png"):
         save_name += ".png"
     
-    os.makedirs(os.path.join(ANALYSIS_DIR, GRAPH_DIR), exist_ok=True)
-    plt.savefig(os.path.join(ANALYSIS_DIR, GRAPH_DIR, save_name))
+    os.makedirs(os.path.join(ANALYSIS_DIR, GRAPHS_DIR), exist_ok=True)
+    plt.savefig(os.path.join(ANALYSIS_DIR, GRAPHS_DIR, save_name))
     
     return fig
