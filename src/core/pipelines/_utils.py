@@ -185,7 +185,7 @@ def classifier_test_step(
     classifier: torch.nn.Module,
     test_data: DataLoader,
     device: torch.device,
-) -> tuple[float, list[int], list[int]]:
+) -> tuple[float, torch.Tensor, torch.Tensor]:
     """
     This function computes the test step for an images classifier.
 
@@ -199,6 +199,8 @@ def classifier_test_step(
     """
 
     accuracies: list[float] = []
+    all_predicted_labels: list[int] = []
+    all_true_labels: list[int] = []
     
     classifier.eval()
 
@@ -214,6 +216,9 @@ def classifier_test_step(
         predicted_labels = torch.argmax(outputs, dim=1).cpu()
         true_labels = labels.cpu()
 
+        all_predicted_labels.extend(predicted_labels.tolist())
+        all_true_labels.extend(true_labels.view(-1).tolist())
+
         accuracies.append(calculate_accuracy(outputs, labels).item())
 
-    return (np.mean(accuracies), predicted_labels, true_labels)
+    return (np.mean(accuracies), torch.tensor(all_predicted_labels), torch.tensor(all_true_labels))
