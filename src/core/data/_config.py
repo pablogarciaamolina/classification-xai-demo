@@ -42,15 +42,16 @@ GARBAGE_TRAINING_TRANSFORMS = transforms.Compose([
 
 # PEDIATRIC PNEUMONIA
 PEDIATRIC_PNEUMONIA_DIR = "Pediatric Chest X-ray Pneumonia"
-PEDIATRIC_PNEUMONIA_SIZE = (227, 227)
+PEDIATRIC_PNEUMONIA_IMAGE_SIZE = (220, 220)
 PEDIATRIC_PNEUMONIA_TRANSFORMS = transforms.Compose([
-    transforms.Resize(PEDIATRIC_PNEUMONIA_SIZE),
+    transforms.Resize(PEDIATRIC_PNEUMONIA_IMAGE_SIZE),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.5], std=[0.5])
 ])
 PEDIATRIC_PNEUMONIA_TRAINING_TRANSFORMS = transforms.Compose([
-    transforms.CenterCrop(PEDIATRIC_PNEUMONIA_SIZE),
+    transforms.CenterCrop(PEDIATRIC_PNEUMONIA_IMAGE_SIZE),
     transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(10),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.5], std=[0.5]),
 ])
