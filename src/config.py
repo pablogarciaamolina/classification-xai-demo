@@ -52,3 +52,19 @@ STL10_PIPELINE_CONFIG = {
         "T_max": epochs
     }
 }
+
+PEDIATRIC_PNEUMONIA_PIPELINE_CONFIG = {
+    "device": device,
+    "epochs": epochs,
+    "loss_class": torch.nn.CrossEntropyLoss,
+    "optimizer_class": torch.optim.AdamW,
+    "optimizer_kwargs": {
+        "lr": lr, 
+        "weight_decay": 0.01
+    },
+    "scheduler_class": torch.optim.lr_scheduler.CosineAnnealingLR,
+    "scheduler_kwargs": {
+        "eta_min": 0.00001,
+        "T_max": epochs
+    }
+}
