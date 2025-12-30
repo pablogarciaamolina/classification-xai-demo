@@ -5,7 +5,7 @@ from torch.utils.data.dataset import Subset
 
 from src.core.data import load_big_cats, load_stl10, load_pediatric_pneumonia_mixed
 from src.core.pipelines import Classifier_Pipeline, Pipeline_Config, load_model
-from src.core.analysis import confusion_matrix
+from src.core.analysis import confusion_matrix, classification_metrics
 from src.config import BATCH_SIZE, BIG_CATS_PIPELINE_CONFIG, STL10_PIPELINE_CONFIG, PEDIATRIC_PNEUMONIA_PIPELINE_CONFIG
 
 DATA_LOADERS = {
@@ -53,12 +53,20 @@ def evaluate(data_name: str, model_name: str) -> None:
             labels=test_data.dataset.dataset.classes if type(test_data.dataset) == Subset else test_data.dataset.classes
         )
 
+        metrics_fig = classification_metrics(
+            predicted_labels,
+            true_labels,
+            save_name=f"{pipeline.name}_classification_metrics",
+            labels=test_data.dataset.dataset.classes if type(test_data.dataset) == Subset else test_data.dataset.classes
+        )
+
         mlflow.log_metrics(
             {
                 "avg_test_accuracy": test_accuracy
             }
         )
         mlflow.log_figure(cm_fig, "confusion_matrix.png")
+        mlflow.log_figure(metrics_fig, "classification_metrics.png")
             
         print("Evaluation registered with MLflow")
 
