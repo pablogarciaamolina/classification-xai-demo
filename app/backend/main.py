@@ -8,42 +8,28 @@ from flask import Flask
 from .api.predict import predict_bp
 from .api.metrics import metrics_bp
 from .api.xai import xai_bp
-from .config import MODEL_NAME, BACKEND_PORT
-
-from src.config import STL10_PIPELINE_CONFIG
-from src.core.pipelines import load_model, Classifier_Pipeline, Pipeline_Config
-from src.core.models import ResNet34
-from .utils.xai_service import XAI_Service
+from .api.dataset import dataset_bp
+from .config import BACKEND_PORT
 
 def raise_backend() -> Flask:
     """
-    Raises the backend for classification and analysis, based on the parameters set on the config file.
+    Raises the backend for classification and analysis.
+    Dataset must be selected via the /dataset/select endpoint before use.
     """
     app = Flask(__name__)
+    
+    app.config["current_dataset"] = None
+    app.config["dataset_config"] = None
+    app.config["pipeline"] = None
+    app.config["xai_service"] = None
+    
+    print("✅ Backend initialized (no dataset loaded)")
+    print("📌 Use /dataset/select endpoint to load a dataset")
 
-    print("🔄 Loading model for prediction pipeline...")
-    model, model_name = load_model(MODEL_NAME)
-    print(f"✅ Model ({model_name}) loaded")
-
-    print("🔄 Setting up pipeline...")
-    pipeline = Classifier_Pipeline(model, config=Pipeline_Config(**STL10_PIPELINE_CONFIG))
-    app.config["pipeline"] = pipeline
-    print("✅ Pipeline set up successfully")
-
-    print("🔄 Loading separate model for XAI service...")
-    model_xai = ResNet34(in_channels=3, num_classes=10, small_inputs=True)
-    model_xai.load_state_dict(model.state_dict())
-    print("✅ Separate model loaded for XAI")
-
-    print("🔄 Initializing XAI service...")
-    xai_service = XAI_Service(model_xai)
-    app.config["xai_service"] = xai_service
-    print("✅ XAI service initialized")
-
-    # Endpoints
     app.register_blueprint(predict_bp)
     app.register_blueprint(metrics_bp)
     app.register_blueprint(xai_bp)
+    app.register_blueprint(dataset_bp)
 
     return app
 

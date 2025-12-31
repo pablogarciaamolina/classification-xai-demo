@@ -8,7 +8,6 @@ import torch
 from PIL import Image
 import numpy as np
 
-from src.core.data._config import STL10_IMAGE_SIZE
 from src.core.analysis.xai.methods.cam import Grad_CAM
 from src.core.analysis.xai.methods.integrated_gradients import Integrated_Gradients
 from src.core.analysis.xai.methods.gradient_ascent import Gradient_Ascent
@@ -24,15 +23,22 @@ class XAI_Service:
     Wrapper for the XAI operations needed.
     """
     
-    def __init__(self, model: torch.nn.Module, device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
+    def __init__(
+        self, 
+        model: torch.nn.Module, 
+        image_size: tuple[int, int] = (96, 96),
+        device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+    ):
         """        
         Args:
             model: PyTorch model to explain
+            image_size: Tuple (height, width) for gradient ascent generation
             device: Device to run computations on
         """
 
         self.model = model
         self.device = device
+        self.image_size = image_size
         self.model.to(device)
         self.model.eval()
         
@@ -133,7 +139,7 @@ class XAI_Service:
         grad_ascent = Gradient_Ascent(
             self.model,
             target_class,
-            STL10_IMAGE_SIZE
+            self.image_size
         )
         
         generated_img = grad_ascent.generate(

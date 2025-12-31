@@ -5,18 +5,24 @@ Local XAI page - Generate and display saliency maps with evaluations
 import streamlit as st
 import requests
 
-from app.frontend.config import IMAGES_PER_PAGE, MAX_GALLERY_COLUMNS, PREDICTION_BACKEND_ENDPOINT, LOCAL_XAI_ENDPOINT
-from components.utils import get_stl10_dataset, get_stl10_dataloader, load_new_batch, tensor_to_display
+from app.frontend.config import IMAGES_PER_PAGE, MAX_GALLERY_COLUMNS, PREDICTION_BACKEND_ENDPOINT, LOCAL_XAI_ENDPOINT, DATASET_METADATA
+from components.utils import get_dataset, get_dataloader, load_new_batch, tensor_to_display
 from components.gallery import render_gallery
 from components.saliency_viz import render_saliency_visualization
 
+if "selected_dataset" not in st.session_state or st.session_state.selected_dataset is None:
+    st.warning("⚠️ No dataset selected. Please select a dataset first.")
+    st.page_link("pages/dataset_selection.py", label="Go to Dataset Selection", icon="🎯")
+    st.stop()
 
-st.title("🔍 Local XAI - Saliency Maps")
+dataset_name = st.session_state.selected_dataset
+dataset_display_name = DATASET_METADATA[dataset_name]["display_name"]
+
+st.title(f"🔍 Local XAI - {dataset_display_name} Saliency Maps")
 st.markdown("Select an image to generate local explanations using GradCAM and Integrated Gradients.")
 
-# Load data
-dataset = get_stl10_dataset()
-dataloader = get_stl10_dataloader(dataset, batch_size=IMAGES_PER_PAGE)
+dataset = get_dataset(dataset_name)
+dataloader = get_dataloader(dataset, batch_size=IMAGES_PER_PAGE)
 
 # Set state
 for key in ["batch", "labels", "selected_index", "local_xai_results"]:

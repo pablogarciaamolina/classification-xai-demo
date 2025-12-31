@@ -1,8 +1,35 @@
 import os
+from src.core.data._config import STL10_IMAGE_SIZE, BIG_CATS_IMAGE_SIZE
+from src.core.data.stl10 import STL10_Dataset
+from src.core.data.big_cats import Big_Cats_Dataset
+from src.config import STL10_PIPELINE_CONFIG, BIG_CATS_PIPELINE_CONFIG
 
 BACKEND_PORT = int(os.getenv("BACKEND_PORT", 8000))
-MODEL_NAME = os.getenv("MODEL_NAME", "pretrained/STL10_ResNet34_base_model")
+# MODEL_NAME = os.getenv("MODEL_NAME", "pretrained/STL10_ResNet34_base_model")
 
 GRADCAM_TARGET_LAYER = "processing_block.15.conv_branch.3"
 ROAD_PERCENTILES = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90]
 AVERAGE_SENSITIVITY_SAMPLES = 30
+
+DATASET_CONFIGS = {
+    "stl10": {
+        "model_name": os.getenv("MODEL_NAME", "pretrained/STL10_ResNet34_base_model"),
+        "num_classes": 10,
+        "in_channels": 3,
+        "image_size": STL10_IMAGE_SIZE,
+        "gradcam_target_layer": "processing_block.15.conv_branch.3",
+        "small_inputs": True,
+        "classes": STL10_Dataset.classes,
+        "pipeline_config": STL10_PIPELINE_CONFIG
+    },
+    "big_cats": {
+        "model_name": os.getenv("MODEL_NAME", "pretrained/Big_Cats_ResNet34_base_model"),
+        "num_classes": 10,
+        "in_channels": 3,
+        "image_size": BIG_CATS_IMAGE_SIZE,
+        "gradcam_target_layer": "processing_block.15.conv_branch.3",
+        "small_inputs": False,
+        "classes": Big_Cats_Dataset.classes,
+        "pipeline_config": BIG_CATS_PIPELINE_CONFIG
+    }
+}
