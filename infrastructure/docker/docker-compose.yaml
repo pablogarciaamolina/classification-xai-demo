@@ -1,4 +1,4 @@
-name: big-cats-app
+name: classification-xai-demo
 
 services:
   demo-api:
@@ -21,8 +21,10 @@ services:
     container_name: demo-web
     environment:
       - PREDICTION_BACKEND_ENDPOINT=http://demo-api:5000/predict
-      - LOCAL_XAI_BACKEND_ENDPOINT=http://demo-api:5000/xai/local
-      - GLOBAL_XAI_BACKEND_ENDPOINT=http://demo-api:5000/xai/global
+      - LOCAL_XAI_ENDPOINT=http://demo-api:5000/xai/local
+      - GLOBAL_XAI_ENDPOINT=http://demo-api:5000/xai/global
+      - DATASET_SELECTION_ENDPOINT=http://demo-api:5000/dataset/select
+      - DATASET_CURRENT_ENDPOINT=http://demo-api:5000/dataset/current
     ports:
       - "${STREAMLIT_PORT}:8501"
     depends_on:
