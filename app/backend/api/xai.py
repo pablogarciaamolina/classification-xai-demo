@@ -5,13 +5,9 @@ XAI API endpoints for local and global explanations
 from flask import Blueprint, request, jsonify, current_app
 import torch
 
-from src.core.data.stl10 import STL10_Dataset
 from app.backend.utils.xai_service import XAI_Service
 
 xai_bp = Blueprint("xai_bp", __name__)
-
-CLASS_MAPPING = STL10_Dataset.classes
-
 
 @xai_bp.route("/xai/local", methods=["POST"])
 def local_explanation():
@@ -57,10 +53,14 @@ def global_explanation():
     """
     try:
         xai_service: XAI_Service = current_app.config["xai_service"]
+        dataset_config = current_app.config.get("dataset_config")
+        
+        if dataset_config is None:
+            return jsonify({"error": "No dataset loaded"}), 400
         
         data = request.get_json()
         target_class = data["target_class"]
-        class_name = CLASS_MAPPING[target_class]
+        class_name = dataset_config["classes"][target_class]
         
         result = xai_service.generate_global_explanation(target_class, class_name)
         

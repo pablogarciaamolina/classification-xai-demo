@@ -1,12 +1,46 @@
 import streamlit as st
 import torch
 import numpy as np
-from src.core.data import load_dataset_stl10
+from src.core.data import load_dataset_stl10, load_dataset_big_cats
+
+@st.cache_resource
+def get_dataset(dataset_name: str) -> torch.utils.data.Dataset:
+    """
+    Method for caching datasets based on dataset name
+    
+    Args:
+        dataset_name: Name of the dataset ("stl10" or "big_cats")
+    
+    Returns:
+        The loaded dataset
+    """
+    if dataset_name == "stl10":
+        return load_dataset_stl10("test")
+    elif dataset_name == "big_cats":
+        return load_dataset_big_cats("test")
+    else:
+        raise ValueError(f"Unknown dataset: {dataset_name}")
+
+@st.cache_resource
+def get_dataloader(_dataset: torch.utils.data.Dataset, batch_size: int = 10) -> torch.utils.data.DataLoader:
+    """
+    Method for caching dataloaders
+    
+    Args:
+        _dataset: The dataset to create a dataloader for
+        batch_size: Number of images per batch
+    
+    Returns:
+        The dataloader
+    """
+    return torch.utils.data.DataLoader(
+        _dataset, batch_size=batch_size, shuffle=True
+    )
 
 @st.cache_resource
 def get_stl10_dataset() -> torch.utils.data.Dataset:
     """
-    Method for caching the STL10 dataset
+    Method for caching the STL10 dataset (backward compatibility)
     """
     return load_dataset_stl10("test")
 
@@ -14,7 +48,7 @@ def get_stl10_dataset() -> torch.utils.data.Dataset:
 @st.cache_resource
 def get_stl10_dataloader(_dataset: torch.utils.data.Dataset, batch_size: int = 10) -> torch.utils.data.DataLoader:
     """
-    Method for caching the STL10 dataset
+    Method for caching the STL10 dataset (backward compatibility)
     """
     return torch.utils.data.DataLoader(
         _dataset, batch_size=batch_size, shuffle=True

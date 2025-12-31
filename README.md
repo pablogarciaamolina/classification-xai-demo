@@ -17,9 +17,11 @@ Application demo for prediction and XAI assesment using the 10 Big Cats dataset.
         - [Backend](#backend)
         - [Frontend](#frontend)
     - [SRC](#src)
-    - [Other Modules](#other-modules)
-        - [DVC PIPELINES](#dvc-pipelines)
-        - [INFRASTRUCTURE](#infrastructure)
+        - [Core](#core)
+            - [Analysis](#analysis)
+            - [Data](#data)
+            - [Models](#models)
+            - [Pipelines](#pipelines)
 
 ## Project Structure
 
@@ -30,15 +32,23 @@ CLASSIFICATION_XAI_DEMO/
 │   │   ├── api/
 │   │   │   ├── metrics.py
 │   │   │   ├── predict.py
+│   │   │   ├── xai.py
+│   │   ├── utils/
+│   │   │   ├── xai_service.py
 │   │   ├── config.py
 │   │   ├── main.py
 │   ├── frontend/
 │   │   ├── components/
 │   │   │   ├── gallery.py
+│   │   │   ├── saliency_viz.py
 │   │   │   ├── selected_view.py
 │   │   │   ├── utils.py
+│   │   ├── pages/
+│   │   │   ├── home.py
+│   │   │   ├── global_xai.py
+│   │   │   ├── local_xai.py
 │   │   ├── config.py
-│   │   ├── home.py
+│   │   ├── main.py
 ├── data/
 │   ├── ...
 ├── infrastructure/
@@ -57,14 +67,30 @@ CLASSIFICATION_XAI_DEMO/
 ├── src/
 │   ├── core/
 │   │   ├── analysis/
+│   │   │   ├── metrics/
+│   │   │   │   ├── ...
+│   │   │   │   ├── graphs.py
+│   │   │   ├── xai/
+│   │   │   │   ├── evaluations/
+│   │   │   │   │   ├── ...
+│   │   │   │   │   ├── average_sensitivity.py
+│   │   │   │   │   ├── road.py
+│   │   │   │   ├── methods/
+│   │   │   │   │   ├── ...
+│   │   │   │   │   ├── cam.py
+│   │   │   │   │   ├── gradient_ascent.py
+│   │   │   │   │   ├── integrated_gradients.py
 │   │   │   ├── ...
-│   │   │   ├── graphs.py
 │   │   ├── data/
 │   │   │   ├── ...
 │   │   │   ├── big_cats.py
+│   │   │   ├── garbage.py
+│   │   │   ├── pediatric_pneumonia.py
+│   │   │   ├── stl10.py
 │   │   ├── models/
 │   │   │   ├── ...
 │   │   │   ├── alexnet.py
+│   │   │   ├── resnet.py
 │   │   ├── pipelines/
 │   │   │   ├── ...
 │   │   │   ├── pipeline.py
@@ -73,7 +99,8 @@ CLASSIFICATION_XAI_DEMO/
 │   ├── big_cats_train.py
 ├── .gitignore
 ├── README.md
-└── requirements.txt
+├── requirements.txt
+└── xai_use_example.ipynb
 ```
 
 ## How to use
@@ -87,7 +114,9 @@ pip install -r requirements.txt
 ```
 
 Download the data manually.
+- STL dataset is already supported natively by torchvision.
 - [Link to 10 Big Cats dataset](https://www.kaggle.com/datasets/gpiosenka/cats-in-the-wild-image-classification)
+- [Link to Pediatric Pneumonia dataset](https://www.kaggle.com/datasets/andrewmvd/pediatric-pneumonia-chest-xray)
 
 ### Deployment
 
@@ -97,18 +126,16 @@ The deployment of the demo involves training a model on the dataset and launchin
 
 ##### Training and evaluating the model
 
-The source module includes a training file that allows to train the model directly. If no model is trained, simply run:
+The source module includes a training file that allows to train the model directly, using flags to select the data (big_cats, stl10, pediatric_pneumonia) and the architecture (alexnet, resnet). If no model is trained, simply run:
 
 ```
-python -m src.big_cats_train
+python -m src.train --data <dataset name> --model <architectur name>
 ```
 
-The other source script included is the evaluation script. It allows to evaluate the model on the test set and register the results.
-
-Additionally, use the `--model-name` flag to specify the name of the model to be evaluated. If no model is specified, the script will look for the latest model in the `models` directory.
+The other source script included is the evaluation script. It allows to evaluate the model on the test set and register the results. It also support flagging for dataset and saved model selection. If no model is specified, the script will look for the latest model in the `models` directory.
 
 ```
-python -m src.big_cats_evaluate --model-name <model_name>
+python -m src.evaluate --data <dataset name> --model-name <model name>
 ```
 
 ##### Visualizing results
@@ -133,33 +160,8 @@ The frontend and the backend of the app are concieved to be deployed independent
 python -m app.backend.main
 ```
 ```
-python -m streamlit run app/frontend/home.py
+python -m streamlit run app/frontend/main.py
 ```
-
-#### Docker deployment
-
-Inside the `infrastructure/docker` folder there are the required components to ease the deployment process using docker.
-
-The Docker deployment uses the **pretrained model** (`models/pretrained/base_model`) by default, so no training is required.
-
-Optionally, one can build the docker images manually:
-
-```
-docker build -f infrastructure/docker/Dockerfile.backend -t mlops-api:latest .
-docker build -f infrastructure/docker/Dockerfile.frontend -t mlops-web:latest .
-```
-
-Running the compose will launch both the backend and the frontend, and will also build the required images if they haven't been built before. The compose also deploys prometheus and grafana containers, configured through the `infrastructure/monitoring` module, for monitoring purposes.
-
-```
-docker compose -f infrastructure/docker/docker-compose.yaml --env-file infrastructure/.env up
-```
-
-A .env file is used in the `infrastructure` folder. Any external port changes can be done through this file and the docker-compose. Understand, the internal ports are hardcoded and changing them in one place might imply changes in other documents.
-
-> **Note**: The backend uses the pretrained model (`models/pretrained/base_model`) by default. To use a different model, set the `MODEL_NAME` variable in the backend configuration, the docker-compose.yaml or .env file.
->
-> Remember, if you want to train a new model locally before deployment, you can use the training script. [See the training section](#training-and-evaluating-the-model).
 
 ## Modules - Specs
 
@@ -171,20 +173,35 @@ This is the module that contains the application, both the frontend and the back
 
 #### Backend
 
-The backend is a Flask API that allows for requesting predictions and other features. It is divided into the actual endpoints, stored in the `api/` folder, and the `main.py` file, which registers the endpoints and launches the backend itself.
+The backend is a Flask API that allows for requesting predictions and other features. It is divided into the actual endpoints, stored in the `api/` folder, a set of utilities like the specific XAI pipeline (`utils\`), and the `main.py` file, which registers the endpoints and launches the backend itself.
 
 ##### Configuration
 
 The configuration of the backend can be found at `app/backend/`.
 
 - ``BACKEND_PORT``: The default port for backend to be launched on.
-- ``MODEL_NAME``: The name of the model to be used for predictions. If not specified, the latest model will be used.
+- ``ROAD_PERCENTILES``: The percentiles to be used for ROAD.
+- ``AVERAGE_SENSITIVITY_SAMPLES``: The number of samples to be used for the average sensitivity calculation.
+
+- ``DATASET_CONFIGS``: The configuration of the datasets supported by the application.
+    - ``stl10`` {
+        - **model_name**: The name of the model to be used for predictions.
+        - **num_classes**: Number of classes in the dataset.
+        - **in_channels**: Number of channels in the dataset.
+        - **image_size**: Size of the images in the dataset.
+        - **gradcam_target_layer**: The target layer for Grad-CAM.
+        - **small_inputs**: Whether the inputs are small or not. Used for STL10.
+        - **classes**: List of classes in the dataset.
+        - **pipeline_config**: Configuration for the XAI pipeline.
+    },
+    - ``big_cats``: 10 Big Cats dataset
+        ...(same as above)...
 
 #### Frontend
 
 The frontend is a simple streamlit app, which presents different samples of the data to the user and allows to operate over them by requesting to the model of the backend through the API.
 
-The ``home.py`` file loads the main page based on the different utilities and components found at ``app/frontend/components``.
+The ``main.py`` file loads the different pages from ``app/frontend/pages`` based on the different utilities and components found at ``app/frontend/components``.
 
 ##### Configuration
 
@@ -193,12 +210,25 @@ The configuration of the frontend can be found at `app/frontend/`.
 - ``IMAGES_PER_PAGE``: Maximum number of images per batch on display.
 - ``MAX_GALLERY_COLUMNS``: Maximum number of columns allowed for the display of the images. 
 - ``PREDICTION_BACKEND_ENDPOINT``: The URL of the API endpoint for making predictions.
+- ``LOCAL_XAI_ENDPOINT``: The URL of the API endpoint for making local XAI requests.
+- ``GLOBAL_XAI_ENDPOINT``: The URL of the API endpoint for making global XAI requests.
+- ``DATASET_SELECTION_ENDPOINT``: The URL of the API endpoint for selecting a dataset.
+- ``DATASET_CURRENT_ENDPOINT``: The URL of the API endpoint for getting the current dataset.
+
+- ``DATASET_METADATA``: The metadata of the datasets supported by the application.
+    - ``stl10``: 
+        - **display_name**: The name of the dataset.
+        - **description**: A description of the dataset.
+        - **num_classes**: The number of classes in the dataset.
+        - **icon**: An icon representing the dataset.
+    - ``big_cats``: 
+        ...(same as above)...
 
 ### SRC
 
-This module contains the source code. It is divided between the actionable scripts found in  `src/` and the code core, and expandable framework on which to build any new capabilities for the project (found at `scr/core/`)
+This module contains the source code. It is divided between the actionable scripts found in  `src/` and the code **core**, and expandable framework on which to build any new capabilities for the project (found at `scr/core/`)
 
-The `core` is divided into modules that encapsulate different necessities, such as `data`, `models` or `pipelines`. In the end, the goal is to be able to create an easy to build modular stream from the executable scripts. Each of the sub-modules in the `core` have their specific configuration files, which are not intended to be modiffied by the user, but rather were created for developing porpuses. Either way, their configurations will be expanded upon after the user configuration file.
+The `core` is divided into modules that encapsulate different necessities, such as `data`, `models`, `pipelines` and `analysis`. In the end, the goal is to be able to create an easy to build modular stream from the executable scripts. Each of the sub-modules in the `core` have their specific configuration files, which are not intended to be modiffied by the user, but rather were created for developing porpuses. Either way, their configurations will be expanded upon after the user configuration file.
 
 #### Main configuration
 
@@ -222,7 +252,7 @@ This is the configuration for the executables based on the parameters. ⚠️ Wr
 - ``NUM_CLASSES``: The number of classes to predict.
 - ``BATCH_SIZE``: The batch size for the data.
 
-- ``BIG_CATS_PIPELINE_CONFIG``: The dictionary used to configure the pipeline in the executables. Set as a configuration for reusability.
+- ``<ANY DATASET>_PIPELINE_CONFIG``: The dictionary used to configure the pipeline in the executables. Set as a configuration for reusability.
     - **device**: The operational device.
     - **epochs**: Number of training epochs.
     - **loss_class**: Loss function class for training the model.
@@ -239,29 +269,63 @@ This is the configuration for the executables based on the parameters. ⚠️ Wr
 
 ⚠️ The following are lowest-level configuration files. The modification of some of the variables may drastically affect the behaviour and reproducibility of the code. Also, modifying this might change the information or steps defined on this document.
 
-##### Data configuration
+##### Analysis 
+
+This is the main module of this project, as it contains not only the metrics methods, but all the XAI implementations. The explanation methods implemented are coded as individual classes with the neccesary capabilities to compute the explanationand present the results individually.
+
+###### Avaliable analysis methods
+
+- ``Metrics``
+    - Confusion matrix
+    - Classification report
+- ``XAI``
+    - ``Methods``
+        - Grad-CAM
+        - Gradient Ascent
+        - Integrated Gradients
+    - ``Evaluations``
+        - Average Sensitivity
+        - ROAD
+
+###### Analysis configuration
+
+- ``ANALYSIS_DIR``: The directory from the root on which the analysis results are saved.
+- ``GRAPHS_DIR``: The directory from the root on which the analysis graphs are saved.
+- ``XAI_DIR``: The directory from the root on which the XAI results are saved.
+
+##### Data
+
+This module cxontains all the files needed to load the datasets. It defines different classes for each of them, as well as methods for quickly loading the data.
+
+###### Data configuration
 
 - ``DATA_DIR``: The directory of the root path from which to load the data.
 
-- ``BIG_CATS_DIR``: Name of the folder inside the data directory on which the data from the Pediatric Pneumonia Chest X-ray dataset is saved at.
-- ``BIG_CATS_TRANSFORMS``: A list containing the transformations for the dataset images.
+- ``<ANY DATASET>_DIR``: Name of the folder inside the data directory on which the data from the dataset is saved at.
+- ``<ANY DATASET>_IMAGE_SIZE``: The size for the images in the dataset.
+- ``<ANY DATASET>_TRANSFORMS``: A list containing the transformations for the dataset images when testing or displaying.
+- ``<ANY DATASET>_TRAINING_TRANSFORMS``: A list containing the transformations for the dataset images when training.
 
-##### Pipelines configuration
+##### Models
+
+This module contains the models architechtures.
+
+###### Avaliable models
+
+- **AlexNet**
+- **ResNet**
+    - ResNet18
+    - Resnet34
+
+##### Pipelines
+
+This module contains the pipelines that allow to seamlessly merge data and model, controlling the training and evaluation flows.
+
+###### Avaliable pipelines
+
+- **ClassificationPipeline**
+
+###### Pipelines configuration
 
 - ``MODELS_SAVE_DIR``: The directory from the root on which to save the models.
 - ``METRICS_DIR``: The directory from the root on which the metric logs are saved. Used by visualization solutions like tensorboard.
-
-##### Analysis configuration
-
-- ``ANALYSIS_DIR``: The directory from the root on which the analysis results are saved.
-- ``GRAPH_DIR``: The directory from the root on which the analysis graphs are saved.
-
-
-#### INFRASTRUCTURE
-
-This module contains the infrastructure code for the deployment of the demo at multiple levels. The submodules contained in it support each other for the deployments.
-
-Current infrastructure:
-- `Docker`: COntains the neccesary files for the dockerization of the application, both frontend and backend, as well as for simultaneos deployment of the app and and the monitorization with Prometheus and Grafana.
-- `Monitoring`: Contains the neccesary files for the deployment of the monitoring modules, both Prometheus and Grafana.
-- `.env`: A configuration file used for configuration regarding all the infrastructure. Mainly for setting the external exposed ports, both when deploying locally with docker, as well as the external ports of the services on GKE.

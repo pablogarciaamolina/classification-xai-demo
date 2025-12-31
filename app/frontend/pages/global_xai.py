@@ -5,15 +5,22 @@ Global XAI page - Generate and display global explanations using Gradient Ascent
 import streamlit as st
 import requests
 
-from app.frontend.config import GLOBAL_XAI_ENDPOINT
-from components.utils import get_stl10_dataset
+from app.frontend.config import GLOBAL_XAI_ENDPOINT, DATASET_METADATA
+from components.utils import get_dataset
 from components.saliency_viz import render_global_visualization
 
+if "selected_dataset" not in st.session_state or st.session_state.selected_dataset is None:
+    st.warning("⚠️ No dataset selected. Please select a dataset first.")
+    st.page_link("pages/dataset_selection.py", label="Go to Dataset Selection", icon="🎯")
+    st.stop()
 
-st.title("🌍 Global XAI - Class Visualizations")
+dataset_name = st.session_state.selected_dataset
+dataset_display_name = DATASET_METADATA[dataset_name]["display_name"]
+
+st.title(f"🌍 Global XAI - {dataset_display_name} Class Visualizations")
 st.markdown("Generate visualizations that show what the model has learned for each class using Gradient Ascent.")
 
-dataset = get_stl10_dataset()
+dataset = get_dataset(dataset_name)
 class_names = dataset.classes
     
 if "global_xai_result" not in st.session_state:
