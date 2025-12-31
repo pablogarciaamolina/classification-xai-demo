@@ -219,4 +219,3 @@ results/
 !/models/pretrained/
 /models/pretrained/*
 !/models/pretrained/.gitignore
-*.ipynb

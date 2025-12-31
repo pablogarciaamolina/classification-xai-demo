@@ -12,7 +12,7 @@ class Gradient_Ascent:
     Gradient Ascent for visualizing what a neural network has learned for a specific class.
     """
     
-    def __init__(self, model: torch.nn.Module, target_class: int, img_size: Tuple[int, int]) -> None:
+    def __init__(self, model: torch.nn.Module, target_class: int, img_size: Tuple[int, int], channels: int = 3) -> None:
         """
         Initialize Gradient Ascent visualizer.
         
@@ -20,16 +20,18 @@ class Gradient_Ascent:
             model: PyTorch model (should be in eval mode)
             target_class: Index of the target class to visualize
             img_size: Tuple (height, width) of the generated image
+            channels: Number of channels in the generated image
         """
 
         self.model = model
         self.model.eval()
         self.target_class = target_class
         self.img_size = img_size
+        self.channels = channels
         self.device = next(model.parameters()).device
         
-        self.mean = torch.tensor([0.5, 0.5, 0.5]).view(1, 3, 1, 1).to(self.device)
-        self.std = torch.tensor([0.5, 0.5, 0.5]).view(1, 3, 1, 1).to(self.device)
+        self.mean = torch.full((1, channels, 1, 1), 0.5).to(self.device)
+        self.std = torch.full((1, channels, 1, 1), 0.5).to(self.device)
         
     def _normalize(self, img: torch.Tensor) -> torch.Tensor:
         """
@@ -128,9 +130,9 @@ class Gradient_Ascent:
         """
 
         if init_type == 'random':
-            img = torch.randn(1, 3, *self.img_size) * 0.1 + 0.5
+            img = torch.randn(1, self.channels, *self.img_size) * 0.1 + 0.5
         elif init_type == 'gray':
-            img = torch.ones(1, 3, *self.img_size) * 0.5
+            img = torch.ones(1, self.channels, *self.img_size) * 0.5
         else:
             raise ValueError(f"Unknown init_type: {init_type}")
         
@@ -229,9 +231,12 @@ class Gradient_Ascent:
             None
         """
         
-        img_display = img.detach().cpu().squeeze().permute(1, 2, 0)
+        img_display = img.detach().cpu().squeeze(0).permute(1, 2, 0)
         img_display = torch.clamp(img_display * 255, 0, 255)
         img_np = img_display.numpy().astype('uint8')
+        
+        if img_np.shape[-1] == 1:
+            img_np = img_np.squeeze(-1)
 
         plt.figure(figsize=(6, 6))
         plt.imshow(img_np)

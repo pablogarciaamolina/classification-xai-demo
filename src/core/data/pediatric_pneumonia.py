@@ -78,7 +78,8 @@ def load_dataset_pediatric_pneumonia(split: str = "mixed", for_training: bool = 
     )
 
 def load_pediatric_pneumonia(
-    batch_size: int = 128
+    batch_size: int = 128,
+    for_training: bool = False
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     Loading method for Peadiatric Chest X-ray Pneumonia dataset.
@@ -86,14 +87,15 @@ def load_pediatric_pneumonia(
 
     Args:
         batch_size: batch size. Defaults to 128.
+        for_training: Whether the dataset is being loaded for training, in order to apply the training transforms (data augmentation). Defaults to `False`.
 
     Returns:
         tuple of three dataloaders, train, val and test in respective order.
     """
     
-    full_train_dataset = load_dataset_pediatric_pneumonia("train")
+    full_train_dataset = load_dataset_pediatric_pneumonia("train", for_training=for_training)
     
-    test_dataset = load_dataset_pediatric_pneumonia("test")
+    test_dataset = load_dataset_pediatric_pneumonia("test", for_training=False)
 
     # Stratified sampling to ensure each patient goes in a single split and the number of examples per label are balanced
     df = pd.DataFrame(
