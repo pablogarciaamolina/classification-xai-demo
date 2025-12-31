@@ -3,7 +3,7 @@ import argparse
 import mlflow
 from torch.utils.data.dataset import Subset
 
-from src.core.data import load_big_cats, load_stl10, load_pediatric_pneumonia_mixed
+from src.core.data import load_big_cats, load_stl10, load_pediatric_pneumonia
 from src.core.pipelines import Classifier_Pipeline, Pipeline_Config, load_model
 from src.core.analysis import confusion_matrix, classification_metrics
 from src.config import BATCH_SIZE, BIG_CATS_PIPELINE_CONFIG, STL10_PIPELINE_CONFIG, PEDIATRIC_PNEUMONIA_PIPELINE_CONFIG
@@ -11,7 +11,7 @@ from src.config import BATCH_SIZE, BIG_CATS_PIPELINE_CONFIG, STL10_PIPELINE_CONF
 DATA_LOADERS = {
     "big_cats": load_big_cats,
     "stl10": load_stl10,
-    "pediatric_pneumonia": load_pediatric_pneumonia_mixed
+    "pediatric_pneumonia": load_pediatric_pneumonia
 }
 
 PIPELINE_CONFIGS = {

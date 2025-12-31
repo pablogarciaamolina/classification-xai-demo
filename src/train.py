@@ -4,7 +4,7 @@ import torch
 import mlflow
 import mlflow.pytorch
 
-from src.core.data import load_big_cats, load_stl10, load_pediatric_pneumonia_mixed
+from src.core.data import load_big_cats, load_stl10, load_pediatric_pneumonia
 from src.core.models import AlexNet, ResNet34
 from src.core.pipelines import Classifier_Pipeline, Pipeline_Config, save_model
 from src.config import NUM_CLASSES, BATCH_SIZE, BIG_CATS_PIPELINE_CONFIG, STL10_PIPELINE_CONFIG, PEDIATRIC_PNEUMONIA_PIPELINE_CONFIG
@@ -13,7 +13,7 @@ from src.config import NUM_CLASSES, BATCH_SIZE, BIG_CATS_PIPELINE_CONFIG, STL10_
 DATA_LOADERS = {
     "big_cats": load_big_cats,
     "stl10": load_stl10,
-    "pediatric_pneumonia": load_pediatric_pneumonia_mixed
+    "pediatric_pneumonia": load_pediatric_pneumonia
 }
 
 MODEL_SMALL_INPUTS = {
