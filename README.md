@@ -1,5 +1,5 @@
 # Classification XAI Demo
-Application demo for prediction and XAI assesment using the 10 Big Cats dataset.
+Application demo for prediction and XAI assesment.
 
 ## Table of Contents
 
